@@ -3,7 +3,7 @@
 Monitor do item [100.000] Moeda Hero Points (id 40111) no Hero Saga.
 
 Envia alerta no Telegram quando:
-  - Venda Por = RMT  e  Valor < 45
+  - Venda Por = RMT  e  Valor < 46
   - Venda Por = Zeny (qualquer valor)
 
 Cada oferta é avisada uma única vez enquanto estiver à venda (sem spam a cada
@@ -26,7 +26,7 @@ TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "COLE_AQUI_O_TOKEN_DO_BOT")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "COLE_AQUI_SEU_CHAT_ID")
 
 ITEM_URL = "https://rpgherosaga.com/?module=item&action=view&id=40111"
-LIMITE_RMT = 45  # alerta quando valor RMT for MENOR que isso
+LIMITE_RMT = 46  # alerta quando valor RMT for MENOR que isso
 
 STATE_FILE = Path(__file__).with_name("monitor_hero_state.json")
 # ========================================================
@@ -55,7 +55,7 @@ def enviar_telegram(texto: str) -> None:
 
 
 def numero(texto: str):
-    """'45 RMT' -> 45 ; '1.500.000 z' -> 1500000"""
+    """'46 RMT' -> 46 ; '1.500.000 z' -> 1500000"""
     digitos = re.sub(r"[^\d]", "", texto)
     return int(digitos) if digitos else None
 
