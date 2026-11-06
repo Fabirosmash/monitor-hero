@@ -3,7 +3,7 @@
 Monitor do item [100.000] Moeda Hero Points (id 40111) no Hero Saga.
 
 Envia alerta no Telegram quando:
-  - Venda Por = RMT  e  Valor < 46
+  - Venda Por = RMT  e  Valor < 45
   - Venda Por = Zeny (qualquer valor)
 
 Cada oferta é avisada uma única vez enquanto estiver à venda (sem spam a cada
@@ -55,9 +55,25 @@ def enviar_telegram(texto: str) -> None:
 
 
 def numero(texto: str):
-    """'46 RMT' -> 46 ; '1.500.000 z' -> 1500000"""
-    digitos = re.sub(r"[^\d]", "", texto)
-    return int(digitos) if digitos else None
+    """Pega só o PRIMEIRO número do texto.
+    '45 RMT' -> 45 ; '45,00 RMT' -> 45.0 ; '1.500.000 z' -> 1500000
+    (antes juntava todos os dígitos da célula, o que quebrava se houvesse
+    texto escondido ou centavos)"""
+    m = re.search(r"\d[\d.]*(?:,\d+)?", texto)
+    if not m:
+        return None
+    s = m.group(0).replace(".", "").replace(",", ".")
+    try:
+        return float(s)
+    except ValueError:
+        return None
+
+
+def achar_coluna(cab, nome):
+    for i, c in enumerate(cab):
+        if nome in c:
+            return i
+    raise ValueError(nome)
 
 
 def buscar_ofertas():
@@ -76,12 +92,14 @@ def buscar_ofertas():
 
     linhas = tabela.find_all("tr")
     cab = [c.get_text(" ", strip=True).lower() for c in linhas[0].find_all(["th", "td"])]
+    print(f"Cabeçalho lido: {cab}")
     try:
-        i_loja = cab.index("loja")
-        i_valor = cab.index("valor")
-        i_qtd = cab.index("qtd")
-        i_venda = cab.index("venda por")
-    except ValueError:
+        i_loja = achar_coluna(cab, "loja")
+        i_valor = achar_coluna(cab, "valor")
+        i_qtd = achar_coluna(cab, "qtd")
+        i_venda = achar_coluna(cab, "venda por")
+    except ValueError as e:
+        print(f"Coluna não encontrada: {e}")
         return None
 
     ofertas = []
@@ -105,9 +123,9 @@ def buscar_ofertas():
 
 def interessa(o) -> bool:
     venda = o["venda_por"].strip().lower()
-    if venda == "zeny":
+    if "zeny" in venda:
         return True
-    if venda == "rmt" and o["valor"] is not None and o["valor"] < LIMITE_RMT:
+    if "rmt" in venda and o["valor"] is not None and o["valor"] < LIMITE_RMT:
         return True
     return False
 
@@ -140,6 +158,15 @@ def main():
         return
     estado["erro_estrutura"] = False
 
+    # Log detalhado: mostra exatamente o que o script leu de cada linha
+    print(f"{len(ofertas)} oferta(s) lida(s) | limite RMT < {LIMITE_RMT}")
+    for o in ofertas:
+        print(
+            f'  [{"ALERTA" if interessa(o) else "ignora"}] '
+            f'valor_txt={o["valor_txt"]!r} -> valor={o["valor"]} | '
+            f'venda_por={o["venda_por"]!r} | loja={o["loja"]!r}'
+        )
+
     boas = [o for o in ofertas if interessa(o)]
     chaves_atuais = {f'{o["link"]}|{o["valor_txt"]}|{o["venda_por"]}' for o in boas}
     ja_avisados = set(estado.get("avisados", []))
@@ -152,7 +179,7 @@ def main():
     if novas:
         partes = ["🔔 <b>[100.000] Moeda Hero Points</b>\n"]
         for o in novas:
-            tag = "💰 ZENY" if o["venda_por"].lower() == "zeny" else "📉 RMT barato"
+            tag = "💰 ZENY" if "zeny" in o["venda_por"].lower() else "📉 RMT barato"
             partes.append(
                 f'{tag}: <b>{o["valor_txt"]}</b> (qtd {o["qtd"]})\n'
                 f'Loja: <a href="{o["link"]}">{o["loja"]}</a>\n'
