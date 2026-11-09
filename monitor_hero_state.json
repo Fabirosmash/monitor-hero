@@ -1,6 +1,7 @@
 {
   "avisados": [
-    "/?module=vending&action=viewshop&id=97144|45 RMT|RMT"
+    "/?module=vending&action=viewshop&id=97144|45 RMT|RMT",
+    "/?module=vending&action=viewshop&id=97152|44 RMT|RMT"
   ],
   "erro_estrutura": false
 }
