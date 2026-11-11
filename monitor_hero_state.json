@@ -1,4 +1,7 @@
 {
-  "avisados": [],
+  "avisados": [
+    "/?module=vending&action=viewshop&id=98006|45 RMT|RMT",
+    "/?module=vending&action=viewshop&id=98008|45 RMT|RMT"
+  ],
   "erro_estrutura": false
 }
